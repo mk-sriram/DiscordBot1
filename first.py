@@ -1,5 +1,6 @@
 import discord 
 import os 
+import asyncio
 from discord.ext import commands 
 from dotenv import load_dotenv 
 #######
@@ -18,56 +19,70 @@ SAMPLE_RANGE_NAME = "general!A:F"
 
 load_dotenv()
 DISCORD_API_SECRET = os.getenv("DISCORD_API_KEY")
-
+        
 class SimpleView(discord.ui.View):
         choice : int = None 
+        
+        async def on_timeout(self) -> None:
+            self.choice = None
+            self.stop()
+            
+            
+        def __init__(self, timerTime:int ):
+            super().__init__(timeout=timerTime)
+            
         @discord.ui.button(label="1",style=discord.ButtonStyle.green)
         async def green(self, interaction:discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer()
             #await interaction.response.send_message("first option was chosen")
             self.choice = 1
             self.stop()
             
-            
         @discord.ui.button(label="2",style=discord.ButtonStyle.blurple)
         async def blurple(self, interaction:discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer()
             #await interaction.response.send_message("second option was chosen")
             self.choice = 2
             self.stop()
-            
-            
-            
+ 
         @discord.ui.button(label="3",style=discord.ButtonStyle.red)
         async def red(self, interaction:discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer()
            #await interaction.response.send_message("third option was chosen")
             self.choice = 3
             self.stop()
              
-            
         @discord.ui.button(label="4",style=discord.ButtonStyle.grey)
         async def gray(self, interaction:discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer()
             #await interaction.response.send_message("fourth option was chosen")
             self.choice = 4
             self.stop()
         
+"""class clearButton(discord.ui.View):
+    def __init__(self,  ctx: commands.Context, lines_to_clear: int):
+        super().__init__()
+        self.lines_to_clear = lines_to_clear
+        self.ctx = ctx 
+
+    @discord.ui.button(label="Clear", style=discord.ButtonStyle.red)
+    async def clear(self, button: discord.ui.Button, interaction: discord.Interaction):
+        # Retrieve the channel where you want to clear messages
+        await self.ctx.purge(limit=self.lines_to_clear + 1)"""
+    
 def run(): 
     intents = discord.Intents.default() 
     intents.message_content = True 
     bot = commands.Bot(command_prefix="!", intents=intents)
-    
-    #variables for the questions
-    
-    
     @bot.event
     async def on_ready():
         print(bot.user)
         print(bot.user.id)
         print("----------------")
-        
-       
     #use the number of questions to extac tthe values from google sheets to quetsion and optiosn list, and then for loop through the rest to create the embeds 
     # Study command to display a question with options
     @bot.command()
-    async def study(ctx,questionNums = 1):
+    async def study(ctx,questionNums = 1, time = 60):
         #num of correct answers 
         values = []
         questions = []
@@ -102,11 +117,11 @@ def run():
                 .get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=SAMPLE_RANGE_NAME)
                 .execute()
             )
-            print("it got the values")
+            #print("it got the values")
             values = result.get("values", [])
-            print(values)
+            #print(values)
             if not values:
-                print("No data found.")
+                await ctx.send("No data found.")
                 return
 
             ##putting into variables 
@@ -118,41 +133,44 @@ def run():
             print(err)
             
       
-        print("started command")
+        #print("started command")
         
         correctCount = 0 
         #getting values from google sheets on request 
         values1 = values[1:questionNums+1]
-        print(values1)
-        print("forloop to extract")
+        #print(values1)
+        #print("forloop to extract")
         for mitem_index in range(len(values1)):
-                print(values1[mitem_index])
-                for item_index in range(0,len(values[mitem_index]),5):
-                    print('question1')
-                    print(values[mitem_index][item_index])
-                    questions.append(values[mitem_index][item_index])
-                    temp_list = [values[mitem_index][item_index + 1],values[mitem_index][item_index + 2],
-                                 values[mitem_index ][item_index + 3],values[mitem_index][item_index + 4]]
-                    options.append(temp_list)
-                    #the correctOption now has char
-                    correctOption.append(values[mitem_index][item_index + 5])
-        # Input validation for google sheets values 
-            #number of values need to be equal 
-        print("past the for loop")
-        print(questions)
-        
-        if not len(options) == len(questions) or len(options) == len(correctOption):
+                #print(values1[mitem_index])
+                #print('question1')
+                     # Check if index + 5 is within the range
+                questions.append(values1[mitem_index][0])
+                temp_list = [
+                    values1[mitem_index][1],
+                    values1[mitem_index][2],
+                    values1[mitem_index][3],
+                    values1[mitem_index][4]
+                ]
+                options.append(temp_list)
+                correctOption.append(values1[mitem_index][5])
+                    
+        if not (len(options) == len(questions) or len(options) == len(correctOption)):
+            await ctx.send("Cells in the database are not full")
             return
-        
         if len(questions) < questionNums:
             await ctx.send("Number of questions is higher than avaiable in database")
             #error check for more request
             return
         
+        print("after getting values ")
         # Create an instance of SimpleView
-        view = SimpleView()
-        for index in range(questionNums): #change to range(0,questionNums)
+        #view = SimpleView()
+        index = 0 
+       
+        while index < questionNums: #change to range(0,questionNums)
             # Create and send the embed with buttons
+             # simple view for each button
+            view = SimpleView(time)
             embed = discord.Embed(
                 colour=discord.Colour.orange(),
                 title=f"{questions[index]} ?"
@@ -166,24 +184,35 @@ def run():
             embed.set_author(name=f"Question {index+1}")
         
             message = await ctx.send(embed=embed, view=view)
-
             
-            print(view.choice) #works till here 
-            await view.wait() 
-            print(view.choice)
-            if view.choice == correctOption[index]: 
-                await ctx.send("correct option was chosen")
-                correctCount+=1
-                continue
-            else:
-                await ctx.send("incorrect option was chosen, try again")
-                continue
-                
+            try:
+                # Wait for the user to interact with the buttons
+                 # Acknowledge the interaction
+                # Retrieve the choice made by the user
+                await view.wait() 
+                selected_option = view.choice
+
+                print(type(selected_option))
+                print(correctCount)
+                if selected_option == int(correctOption[index]):
+                    await ctx.send("Correct option was chosen!")
+                    correctCount += 1
+                elif selected_option == None:
+                    await ctx.send("you ran out of time!")
+                else:
+                    await ctx.send("Incorrect option was chosen")
+                index += 1
+            
+            except asyncio.TimeoutError:
+                await ctx.send("You didn't select an option in time.")
+                break
+
+            # Optionally, you can send the total score or any final message after all questions are answered.
+        await ctx.send(f"Quiz ended! You got {correctCount} out of {questionNums} questions correct.")
         
-       #await send_question(ctx, question, options)
-    
             
     bot.run(DISCORD_API_SECRET)
     
 if __name__ == "__main__":
     run() 
+    
