@@ -14,19 +14,25 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 # The ID and range of a sample spreadsheet.
 SAMPLE_SPREADSHEET_ID = "1PXo41iQE6BpjX6SWSkmTjz_2SKowuyLTIm6OpjcL4t4"
-SAMPLE_RANGE_NAME = "general!A:F"
-####
+SAMPLE_RANGE_NAME = "A:F"
 
 load_dotenv()
 DISCORD_API_SECRET = os.getenv("DISCORD_API_KEY")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
+GOOGLE_AUTH_URI = os.getenv("GOOGLE_AUTH_URI")
+GOOGLE_TOKEN_URI = os.getenv("GOOGLE_TOKEN_URI")
+GOOGLE_AUTH_PROVIDER_CERT_URL = os.getenv("GOOGLE_AUTH_PROVIDER_CERT_URL")
+GOOGLE_REDIRECT_URIS = os.getenv("GOOGLE_REDIRECT_URIS")
+
         
 class SimpleView(discord.ui.View):
         choice : int = None 
         
         async def on_timeout(self) -> None:
             self.choice = None
-            self.stop()
-            
+            self.stop()  
             
         def __init__(self, timerTime:int ):
             super().__init__(timeout=timerTime)
@@ -34,28 +40,24 @@ class SimpleView(discord.ui.View):
         @discord.ui.button(label="1",style=discord.ButtonStyle.green)
         async def green(self, interaction:discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
-            #await interaction.response.send_message("first option was chosen")
             self.choice = 1
             self.stop()
             
         @discord.ui.button(label="2",style=discord.ButtonStyle.blurple)
         async def blurple(self, interaction:discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
-            #await interaction.response.send_message("second option was chosen")
             self.choice = 2
             self.stop()
  
         @discord.ui.button(label="3",style=discord.ButtonStyle.red)
         async def red(self, interaction:discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
-           #await interaction.response.send_message("third option was chosen")
             self.choice = 3
             self.stop()
              
         @discord.ui.button(label="4",style=discord.ButtonStyle.grey)
         async def gray(self, interaction:discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
-            #await interaction.response.send_message("fourth option was chosen")
             self.choice = 4
             self.stop()
         
@@ -74,20 +76,22 @@ def run():
     intents = discord.Intents.default() 
     intents.message_content = True 
     bot = commands.Bot(command_prefix="!", intents=intents)
+    
     @bot.event
     async def on_ready():
         print(bot.user)
-        print(bot.user.id)
         print("----------------")
-    #use the number of questions to extac tthe values from google sheets to quetsion and optiosn list, and then for loop through the rest to create the embeds 
+    
     # Study command to display a question with options
     @bot.command()
     async def study(ctx,questionNums = 1, time = 60):
-        #num of correct answers 
+        #Database variables
         values = []
         questions = []
         options = []
         correctOption = []
+        #number of correct responses
+        correctCount = 0 
         
         creds = None
         # The file token.json stores the user's access and refresh tokens, and is
@@ -100,8 +104,19 @@ def run():
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials.json", SCOPES
+                flow = InstalledAppFlow.from_client_config(
+                    {
+                        "installed": {
+                            "client_id": GOOGLE_CLIENT_ID,
+                            "project_id": GOOGLE_PROJECT_ID,
+                            "auth_uri": GOOGLE_AUTH_URI,
+                            "token_uri": GOOGLE_TOKEN_URI,
+                            "auth_provider_x509_cert_url": GOOGLE_AUTH_PROVIDER_CERT_URL,
+                            "client_secret": GOOGLE_CLIENT_SECRET,
+                            "redirect_uris": GOOGLE_REDIRECT_URIS
+                        }
+                    },
+                    SCOPES,
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
@@ -124,18 +139,10 @@ def run():
                 await ctx.send("No data found.")
                 return
 
-            ##putting into variables 
-            #print(values)
-            ###for row in values:
-            # Print columns A and E, which correspond to indices 0 and 4.
-            #print(f"{row[0]}, {row[4]}")###
         except HttpError as err:
             print(err)
             
-      
-        #print("started command")
-        
-        correctCount = 0 
+       
         #getting values from google sheets on request 
         values1 = values[1:questionNums+1]
         #print(values1)
