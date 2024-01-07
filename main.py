@@ -9,11 +9,16 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-# If modifying these scopes, delete the file token.json.
+
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-# The ID and range of a sample spreadsheet.
+# Change this value to your Spreadsheet ID 
 SAMPLE_SPREADSHEET_ID = "1PXo41iQE6BpjX6SWSkmTjz_2SKowuyLTIm6OpjcL4t4"
+
+
+
+
+#######DONT CHANGE ANYTHIGN BELOW#######
 SAMPLE_RANGE_NAME = "A:F"
 
 load_dotenv()

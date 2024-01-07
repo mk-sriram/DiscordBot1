@@ -8,7 +8,6 @@ Meet Quizzy! It’s like having a trivia night right in your Discord server. Pul
 - _Easy Database Linking:_ Connects seamlessly with Google Sheets, allowing for easy access and updates to the question database.
 - _Multiple Choice Format:_ Questions are presented in a multiple-choice format, making it easy and intuitive to use.
 - _Scoring System:_ Keeps track of your scores, providing a fun and competitive element to learning.
-- _Random Question Selection:_ Questions are randomly selected from the database, ensuring a wide variety of topics.
 - _User-Friendly Interface:_ The bot is designed to be user-friendly, making your learning experience smooth and enjoyable.
 
 ## Demo
