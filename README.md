@@ -11,7 +11,7 @@ Meet Quizzy! It’s like having a trivia night right in your Discord server. Pul
 - _User-Friendly Interface:_ The bot is designed to be user-friendly, making your learning experience smooth and enjoyable.
 
 ## Demo
-
+![image](/Users/srirammk/Documents/GitHub/Quizzy.io/assets/ss1.png)
 ## Run Locally
 
 `1. Clone the project`
